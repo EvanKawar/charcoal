@@ -27,6 +27,8 @@ jobs:
         run: npm install
 
       - uses: tauri-apps/tauri-action@v0
+	env: 
+	  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Charcoal ${{ github.ref_name }}'
@@ -48,6 +50,8 @@ jobs:
         run: npm install
 
       - uses: tauri-apps/tauri-action@v0
+	env: 
+	  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Charcoal ${{ github.ref_name }}'
