@@ -37,6 +37,8 @@ jobs:
           node-version: 20
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
       - name: Install frontend deps
         run: npm install
       - uses: tauri-apps/tauri-action@v0
@@ -46,3 +48,4 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: 'Charcoal ${{ github.ref_name }}'
           releaseDraft: true
+          args: --target universal-apple-darwin
