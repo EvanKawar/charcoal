@@ -1,6 +1,6 @@
 ## charcoal
 
-charcoal is a fast and efficient note-taking app. It uses markdown file formatting; a welcome guide is available upon download. Built using tauri and react, it supports latex via KateX, pasted images, enhanced multitasking, export notes to PDF, and custom themes, all while consuming less resources than your favorite Electron applications. 
+charcoal is a fast and efficient note-taking app. It uses markdown file formatting; a welcome guide is pre-installed for those unfamiliar. Built using tauri and react, it supports latex via KateX, pasted images, enhanced multitasking, exporting notes to .PDF, and custom themes, all while consuming less resources than your favorite Electron applications. 
 
 ## INSTALLATION 
 
@@ -9,6 +9,6 @@ Download the '.AppImage' or '.deb' from the latest release and run it.
 
 ### MacOS
 Download the '.dmg' from the latest release, open it, and drag charcoal to your applications folder
-> **Note:** Since charcoal isn't signed with an Apple developer certificate, macOS will block it on first launch. To get around this, right-click the app and select **Open** instead of double-clicking it, then click **Open** in the dialog. You only need to do this once. 
+> **Note:** Since charcoal isn't signed with an Apple developer certificate, macOS will block it on first launch. To get around this, right-click the app and select **Open** instead of double-clicking it, then click **Open** in the dialog. Alternatively, you may use the terminal application to manually remove the quarantine attribute. You should only need to do this once. 
  
 
