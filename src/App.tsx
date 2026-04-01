@@ -3,6 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { readDir, readTextFile, writeTextFile, mkdir, remove, rename } from '@tauri-apps/plugin-fs';
 import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { LogicalSize } from '@tauri-apps/api/dpi';
 import Editor from './components/Editor';
 import './App.css';
 
@@ -418,13 +419,12 @@ applyTheme(loadTheme());
 // ─── ViewerApp ────────────────────────────────────────────────────────────────
 
 function ViewerApp() {
-  const noteName = viewerNote
-    ? decodeURIComponent(viewerNote).split('/').pop()?.replace(/\.md$/, '') ?? ''
-    : '';
   const [theme, setTheme] = useState<Theme>(loadTheme);
 
   useEffect(() => {
-    getCurrentWindow().setDecorations(false).catch(console.error);
+    if (loadTheme().borderless) {
+      getCurrentWindow().setDecorations(false).catch(console.error);
+    }
   }, []);
 
   useEffect(() => {
@@ -433,6 +433,7 @@ function ViewerApp() {
         const t = loadTheme();
         applyTheme(t);
         setTheme(t);
+        getCurrentWindow().setDecorations(!t.borderless).catch(console.error);
       }
     };
     window.addEventListener('storage', onStorage);
@@ -464,7 +465,6 @@ function ViewerApp() {
 
   return (
     <div className="app-shell">
-      {!theme.borderless && <Titlebar noteName={noteName} />}
       <div className="viewer-mode">
         <Editor
           filePath={decodeURIComponent(viewerNote!)}
@@ -738,24 +738,6 @@ function FolderDeleteModal({ folderName, onDeleteAll, onMoveToRoot, onCancel }: 
 
 // ─── Titlebar ─────────────────────────────────────────────────────────────────
 
-function Titlebar({ noteName }: { noteName: string }) {
-  const win = getCurrentWindow();
-  return (
-    <div className="titlebar" data-tauri-drag-region>
-      <div className="titlebar-title" data-tauri-drag-region>
-        <span className="titlebar-appname" data-tauri-drag-region>charcoal</span>
-        {noteName && <><span className="titlebar-sep" data-tauri-drag-region> — </span>
-          <span className="titlebar-notename" data-tauri-drag-region>{noteName}</span></>}
-      </div>
-      <div className="titlebar-controls">
-        <button className="titlebar-btn" title="Minimize"      onClick={() => win.minimize()}>─</button>
-        <button className="titlebar-btn" title="Maximize"      onClick={() => win.toggleMaximize()}>□</button>
-        <button className="titlebar-btn titlebar-close" title="Close" onClick={() => win.close()}>×</button>
-      </div>
-    </div>
-  );
-}
-
 // ─── TreeItem ─────────────────────────────────────────────────────────────────
 
 interface TreeItemProps {
@@ -918,9 +900,11 @@ export default function App() {
     localStorage.setItem('charcoal_theme', JSON.stringify(theme));
   }, [theme]);
 
-  // ── Remove OS decorations unconditionally (custom titlebar is always default) ─
+  // ── Restore OS decoration state from saved theme on startup ─────────────────
   useEffect(() => {
-    getCurrentWindow().setDecorations(false).catch(console.error);
+    if (loadTheme().borderless) {
+      getCurrentWindow().setDecorations(false).catch(console.error);
+    }
   }, []);
 
   // ── Theme handlers ───────────────────────────────────────────────────────
@@ -949,9 +933,20 @@ export default function App() {
     });
   }, []);
 
-  const handleToggleBorderless = useCallback(() => {
-    setTheme((t) => ({ ...t, borderless: !t.borderless }));
-  }, []);
+  const handleToggleBorderless = useCallback(async () => {
+    const newVal = !theme.borderless;
+    setTheme((t) => ({ ...t, borderless: newVal }));
+    const win = getCurrentWindow();
+    await win.setDecorations(!newVal);
+    if (!newVal) {
+      // GTK bug: after restoring decorations, webview input region still covers the titlebar.
+      // A 1px size nudge forces GTK to recalculate layout and makes the window buttons clickable again.
+      const size = await win.innerSize();
+      const dpr = window.devicePixelRatio || 1;
+      await win.setSize(new LogicalSize(size.width / dpr + 1, size.height / dpr));
+      await win.setSize(new LogicalSize(size.width / dpr, size.height / dpr));
+    }
+  }, [theme.borderless]);
 
   // ── Global keyboard shortcuts ────────────────────────────────────────────
   useEffect(() => {
@@ -1143,7 +1138,6 @@ export default function App() {
     } catch (err) { alert(`Failed to move: ${err}`); }
   }, [notesPath]);
 
-  const currentNoteName = currentFile?.split('/').pop()?.replace(/\.md$/, '') ?? '';
 
   if (!notesPath) {
     return <WelcomeScreen onOpen={selectFolder} onCreate={createVault} />;
@@ -1158,9 +1152,6 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {!theme.borderless && (
-        <Titlebar noteName={currentNoteName} />
-      )}
       <div className="app">
         {sidebarOpen ? (
           <aside className="sidebar">
